@@ -145,9 +145,9 @@ housing200808on <- getsub(housing200808on)
 ## That's everything. Bind it all up into a single dataframe
 mymaster <- rbind(housing201301on, housing201208on, housing201201on, housing201108on, housing201101on, housing201008on, housing201001on, housing200908on, housing200901on, housing200808on)
 # File to write out
-file <- paste(dir, "mymaster.xlsx", sep="/")
+#file <- paste(dir, "mymaster.xlsx", sep="/")
 # Write out the file
-write.xlsx(mymaster, file, row.names=FALSE, showNA=FALSE)
+#write.xlsx(mymaster, file, row.names=FALSE, showNA=FALSE)
 ```
 
 The resulting dataset is imported manually into filemaker's 'Housing' table, extending the dataset collected from Banner to cover Fall 2008-Fall 2015.
@@ -173,8 +173,9 @@ Two additional fields are added: ```Students.TotalSemestersInHonorsHall``` and `
 
 ```{r, set-options, echo=FALSE, warning=FALSE, error=FALSE}
 options(width=80)
-source("StudentConn.R")
-
+studentconn <- paste(dir, "../StudentConn.R", sep="/")
+#source("StudentConn.R")
+source(studentconn)
 library(googlesheets)
 setupHNEnv()
 
@@ -262,9 +263,9 @@ wdtable
 
 The vast majority (79%) of withdrawals in this dataset are voluntary withdrawals from Honors. While we cannot determine intent of students who withdrew from Ferris as well as Honors, it is plausible that a similar ratio were voluntary. We therefore have a large number of students (potentially `r wdtable[3,1]`) who choose to withdraw from Honors, but stay at Ferris, within one year of leaving the Honors residence halls.
 
-* Of those who left honors housing and did not complete in Honors, `r mytable[2,1]` of `r mytable[2,1]+mytable[2,2]` or `r round((mytable[2,1]/sum(mytable[2,1],mytable[2,2]))*100,1)`% withdrew from Honors **within one year** of leaving Honors housing. 
+* Of those who left honors housing and did not complete in Honors, `r mytable[2,1]` of `r mytable[2,1]+mytable[2,2]` or `r round((mytable[2,1]/sum(mytable[2,1],mytable[2,2]))*100,1)`% withdrew from Honors within one year of leaving Honors housing. 
 
-* Of those who completed honors, `r mytable[1,1]` of `r mytable[1,1]+mytable[1,2]` or `r round((mytable[1,1]/sum(mytable[1,1],mytable[1,2]))*100,1)`% did so with one year.  
+* Of those who completed honors, `r mytable[1,1]` of `r mytable[1,1]+mytable[1,2]` or `r round((mytable[1,1]/sum(mytable[1,1],mytable[1,2]))*100,1)`% did so within one year.  
 
 In sum, only `r sum(mytable[1,1],mytable[2,2],mytable[1,2])` of `r nrow(df)` students or `r round((sum(mytable[1,1],mytable[2,2],mytable[1,2])/nrow(df))*100,1)`%  presisted^[retained or completed] for 1 year after leaving an Honors hall. 
 
@@ -277,7 +278,7 @@ table(df$Status2, df$stayedon) -> stayedontable
 stayedontable
 ```
 
-The number of students who withdrew from Honors but stayed on campus for more than one year is significantly higher ( `r stayedontable[2,2]`)  than the number who stayed in Honors for more than one year after leaving Honors housing (`r mytable[2,2]`).  This confirms our previous conclusion: a large chunk of Honors students (potentially `r stayedontable[2,2]-mytable[2,2]`) voluntarily withdraw from Honors before completion, but stayed at Ferris after leaving campus housing. 
+The number of students who withdrew from Honors but stayed on campus for more than one year is significantly higher ( `r stayedontable[2,2]`)  than the number who withdrew from Honors more than one year after leaving Honors housing (`r mytable[2,2]`).  This confirms our previous conclusion: there is a large group of Honors students (potentially `r stayedontable[2,2]-mytable[2,2]`) who move off campus and voluntarily withdrew from Honors before completion, while staying enrolled at Ferrs. 
 
 These students we would like to retain.
 
