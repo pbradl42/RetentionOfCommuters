@@ -19,7 +19,7 @@ Data was collected from old 'Everyone' Sheets in Tammy's archive on Active Direc
 
 ```{r echo=FALSE}
 ## The directory of the Old everyone lists. MUST be here!
-dir <- "OLD_EveryoneLists"
+dir <- "~/Desktop/RTallies/OLD_EveryoneLists"
 
 cleanOn <- function(onSet) {
     ## Function to clean the 'OnCampus' sheet so that it will load into filemaker
@@ -277,7 +277,7 @@ table(df$Status2, df$stayedon) -> stayedontable
 stayedontable
 ```
 
-The number of students who withdrew from Honors but stayed on campus for more than one year is significantly higher ( `r stayedontable[2,2]`)  than the number who stayed in Honors for more than one year after leaving Honors housing (`r mytable[2,2]`).  This confirms our previous conclusion: a large chunk of Honors students (potentially `r stayedontable[2,2]-mytable[2,2]`) stay at Ferris after leaving campus housing, and voluntarily withdraw from Honors before completion. 
+The number of students who withdrew from Honors but stayed on campus for more than one year is significantly higher ( `r stayedontable[2,2]`)  than the number who stayed in Honors for more than one year after leaving Honors housing (`r mytable[2,2]`).  This confirms our previous conclusion: a large chunk of Honors students (potentially `r stayedontable[2,2]-mytable[2,2]`) voluntarily withdraw from Honors before completion, but stayed at Ferris after leaving campus housing. 
 
 These students we would like to retain.
 
