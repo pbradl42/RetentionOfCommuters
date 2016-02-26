@@ -1,0 +1,320 @@
+---
+title: "Retention to Honors of Commuters, Fall 2008 - Fall 2015"
+author: "Dr. Peter Bradley"
+date: "February 26, 2016"
+output: pdf_document
+---
+```{r echo=FALSE}
+library(stringr)
+library(xlsx)
+```
+
+
+In its initial configuration, students in the Honors Program were ensured of a single room in an Honors residence hall for their entire four-year stay in the Program.  That changed to a two-year stay required, with the option for two additional in 1999  In 2013, the cost of a single room increased to $1800, while the Honors Residential Life scholarship was only $1500.  Subsequently, in Fall 2014, the requirement was adjusted again, for two reasons. First, the Honors Residential Life Scholarship was made a 1-year non-renewable scholarship, and the price of a single room increased again, widening the gap that students would have to pay out-of-pocket.  Second, the University allows students who were older than 19 or lived within 50 road miles to commute in their first year. As a result, the Honors Program added double rooms to the Honors halls, and accepted FTIAC commuters for the first time.
+
+## Collecting and cleaning data
+Housing records from Fall 2013-Fall 2015 originate in Banner, retrieved via webfocus using report SG0024SB.  Unfortunately, it appears that housing records priot to Fall 2013 are not available through Banner.^[According to email communication from Kathy Fisher, 2/25/2016. Bob in housing is looking into it.] This report lists all students coded as Honors for a given semester and their housing assignment, if they are living on-campus. Off-campus Honors students do not appear.
+
+Data was collected from old 'Everyone' Sheets in Tammy's archive on Active Directory.  These are excel files, one for each semester, listing demographic information about the current students, including housing.  Students are split between two sheets 'On Campus' and 'Off Campus.'
+
+```{r echo=FALSE}
+## The directory of the Old everyone lists. MUST be here!
+dir <- "OLD_EveryoneLists"
+
+cleanOn <- function(onSet) {
+    ## Function to clean the 'OnCampus' sheet so that it will load into filemaker
+  # remove NA's on CampusID (read.xlsx is bringing in the empty rows at the bottom of the sheet)
+  onSet <- onSet[!is.na(onSet$CampusID), ]
+  # L..Address is 'Local Address' or hall + room number. The SG0024SD report from webfocus keeps hall and room separate.
+  # Hall, and trim whitespace
+  onSet$hall <- str_trim(str_sub(onSet$L..Address, 1, -4))
+  # Split room, last 3 characters
+  onSet$room <- str_sub(onSet$L..Address, -3, -1)
+  
+  # Replace 3-letter code to standard full hall name
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "MIL",]) > 0) {
+    onSet[!is.na(onSet$hall) & onSet$hall == "MIL", ]$hall <- "Miller Hall"
+  }
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "WAR",]) > 0) {
+    onSet[!is.na(onSet$hall) & onSet$hall == "WAR", ]$hall <- "Ward Hall"
+  }
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "PIC",]) > 0) {
+      onSet[!is.na(onSet$hall) & onSet$hall == "PIC", ]$hall <- "Pickell Hall"
+  }
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "HEN",]) > 0) {
+        onSet[!is.na(onSet$hall) & onSet$hall == "HEN", ]$hall <- "Henderson Hall"
+  }
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "PUT",]) > 0) {
+    onSet[!is.na(onSet$hall) & onSet$hall == "PUT", ]$hall <- "Puterbaugh Hall"
+  }
+  
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "HFE",]) > 0) {
+    onSet[!is.na(onSet$hall) & onSet$hall == "HFE", ]$hall <- "Helen Ferris Hall"
+  }
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "CAR",]) > 0) {
+    onSet[!is.na(onSet$hall) & onSet$hall == "CAR", ]$hall <- "Carlisle Hall"
+  }
+  if(nrow(onSet[!is.na(onSet$hall) & onSet$hall == "MAS",]) > 0) {
+    onSet[!is.na(onSet$hall) & onSet$hall == "MAS", ]$hall <- "Masselink Hall"
+  }
+  
+  
+    return(onSet)
+}
+
+mycolindex <- function(mycolnam, mydf) {
+  ## Finds colIndex from name, in case the columns moved around a bit from semester to semester
+  return(grep(mycolnam, colnames(mydf)))
+}
+
+getsub <- function(mydf) {
+  # Grabs the colIndex for all the columns we need to match SG0024SG
+  test <- c("Semester", "First.Name", "Last.Name", "CampusID", "Program", "College", "hall", "room")
+  collist <- sapply(test, mycolindex, mydf, simplify = TRUE)
+  return(mydf[, collist])
+}
+
+## For each one, read in the file, clean it, add a 'Semester' column, grab only the columns we need.
+housing201308on <- read.xlsx(paste(dir, "EveryoneFall2013 copy.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201308on <- cleanOn(housing201308on)
+housing201308on$Semester <- "201308"
+housing201308on <- getsub(housing201308on)
+
+housing201301on <- read.xlsx(paste(dir, "EveryoneSPRING2013.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201301on <- cleanOn(housing201301on)
+housing201301on$Semester <- "201301"
+housing201301on <- getsub(housing201301on)
+
+housing201308off <- read.xlsx(paste(dir, "EveryoneFall2013 copy.xlsx", sep="/"), sheetName=" Off-Campus", header=TRUE, colIndex = 1:25)
+housing201208off <- read.xlsx(paste(dir, "EveryoneFall2012.xlsx", sep="/"), sheetName=" Off-Campus", header=TRUE, colIndex = 1:25)
+
+housing201208on <- read.xlsx(paste(dir, "EveryoneFall2012.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201208on <- cleanOn(housing201208on)
+housing201208on$Semester <- "201208"
+housing201208on <- getsub(housing201208on)
+
+housing201201on <- read.xlsx(paste(dir, "EveryoneSPRING2012.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201201on <- cleanOn(housing201201on)
+housing201201on$Semester <- "201201"
+housing201201on <- getsub(housing201201on)
+
+housing201108off <- read.xlsx(paste(dir, "EveryoneFall2011.xlsx", sep="/"), sheetName=" Off-Campus", header=TRUE, colIndex = 1:25)
+
+housing201108on <- read.xlsx(paste(dir, "EveryoneFall2011.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201108on <- cleanOn(housing201108on)
+housing201108on$Semester <- "201108"
+housing201108on <- getsub(housing201108on)
+
+housing201101on <- read.xlsx(paste(dir, "EveryoneSPRING2011.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201101on <- cleanOn(housing201101on)
+housing201101on$Semester <- "201101"
+housing201101on <- getsub(housing201101on)
+
+housing201008off <- read.xlsx(paste(dir, "EveryoneFall2010.xlsx", sep="/"), sheetName=" Off-Campus", header=TRUE, colIndex = 1:25)
+
+housing201008on <- read.xlsx(paste(dir, "EveryoneFall2010.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201008on <- cleanOn(housing201008on)
+housing201008on$Semester <- "201008"
+housing201008on <- getsub(housing201008on)
+
+housing201001on <- read.xlsx(paste(dir, "EveryoneSPRING2010.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing201001on <- cleanOn(housing201001on)
+housing201001on$Semester <- "201001"
+housing201001on <- getsub(housing201001on)
+
+housing200908off <- read.xlsx(paste(dir, "EveryoneFall2009.xlsx", sep="/"), sheetName=" Off-Campus", header=TRUE, colIndex = 1:25)
+
+housing200908on <- read.xlsx(paste(dir, "EveryoneFall2009.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing200908on <- cleanOn(housing200908on)
+housing200908on$Semester <- "2009098"
+housing200908on <- getsub(housing200908on)
+
+housing200901on <- read.xlsx(paste(dir, "EveryoneSPRING2009.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+housing200901on <- cleanOn(housing200901on)
+housing200901on$Semester <- "200901"
+housing200901on <- getsub(housing200901on)
+
+housing200808off <- read.xlsx(paste(dir, "EveryoneFall2008.xlsx", sep="/"), sheetName=" Off-Campus", header=TRUE, colIndex = 1:25)
+
+housing200808on <- read.xlsx(paste(dir, "EveryoneFall2008.xlsx", sep="/"), sheetName=" OnCampus", header=TRUE, colIndex = 1:25)
+colnames(housing200808on)[20] <- "L..Address"
+housing200808on <- cleanOn(housing200808on)
+housing200808on$Semester <- "200808"
+housing200808on <- getsub(housing200808on)
+
+## That's everything. Bind it all up into a single dataframe
+mymaster <- rbind(housing201301on, housing201208on, housing201201on, housing201108on, housing201101on, housing201008on, housing201001on, housing200908on, housing200901on, housing200808on)
+# File to write out
+file <- paste(dir, "mymaster.xlsx", sep="/")
+# Write out the file
+write.xlsx(mymaster, file, row.names=FALSE, showNA=FALSE)
+```
+
+The resulting dataset is imported manually into filemaker's 'Housing' table, extending the dataset collected from Banner to cover Fall 2008-Fall 2015.
+
+
+### Filemaker transformations
+Fields are added to each student record in filemaker corresponding to the students' living arrangement in their first semester, 1 year after, 2 years after, 3 years after and 4 years after.  They are called:
+* Students.HousingStart
+* Students.Housing1Year
+* Students.Housing2Year
+* Students.Housing3Year
+* Students.Housing4Year
+
+Each of these is specified (unfortunately) via ExecuteSQL thus: 
+
+> If(IsEmpty(updateFlag);-1;ExecuteSQL("SELECT isHonors from Housing WHERE BannerID = ? AND Semester = ? AND (Housing.Hall like 'Miller%' OR Housing.Hall like 'War%' OR Housing.Hall like 'Picke%' OR Housing.Hall like 'Henders%' OR Housing.Hall like 'Puterb%' OR Housing.Hall like 'Helen%' OR Housing.Hall like 'Car%' )"; ""; ""; ID; FirstSemesterAsHonors))
+
+where the ```'Semester = ?'``` clause is changed to the ```FirstSemesterAsHonors```, ```FirstSemesterAsHonors + 100```, etc. to query the semester in question.
+
+Two additional fields are added: ```Students.TotalSemestersInHonorsHall``` and ```Students.TotalSemestersOnCampus```, both of which are specified using Filemaker language: ```Count(Housing::isHonors)``` and ```Count(Housing::Hall)``` respectively.
+
+### Collecting data from filemaker
+
+```{r, set-options, echo=FALSE, warning=FALSE, error=FALSE}
+options(width=80)
+source("StudentConn.R")
+
+library(googlesheets)
+setupHNEnv()
+
+getstudenthousing <- function(semester) {
+  demodatatocollect <- paste("Students.Ethnicity, Students.TotalSemestersInHonorsHall, Students.TotalSemestersAtFerris, Students.TotalSemestersAtFerrisWithOutHonors, Students.TotalSemestersOnCampus, Students.LastSemesterAsHonor, Students.LastSemesterAtFerris, Students.TotalSemestersAsHonors, Students.HousingStart, Students.Housing1Year, Students.Housing2Year, Students.Housing3Year, Students.Housing4Year, Students.Status2, Students.Status3, Students.Gender, Students.LastCollege, Students.LastMajor, Students.First_Generation, Students.HS_GPA, Students.ACT_COMP, Students.SAT_COMP, Students.EntranceType, Students.FirstSemesterAsHonors, Students.Athlete, Students.State_Corrected, Students.Zip_Corrected")
+  iddata <- paste("Students.ID")
+  
+  if(missing(semester)) {
+    sqlstr <- paste("SELECT ", iddata, ", ", demodatatocollect, "
+                    FROM Students WHERE FirstSemesterAsHonors > 200807", sep = "")
+  } else {
+    sqlstr <- paste("SELECT ", iddata, ", ", demodatatocollect, "
+                    FROM Students, Housing
+                    WHERE Students.FirstSemesterAsHonors = '", semester, "'", sep = "")
+  }  
+  #sqlstr <- paste("Select * from Students where Status2 = \'", status, "\'", sep = "")
+  message(sqlstr)
+  student_details <- studentConn(sqlstr)
+  return(student_details)
+}
+
+## Load the whole set from Filemaker, if not loaded already
+if(!exists("wholeSet")) {
+  wholeSet <- getstudenthousing()
+}
+```
+
+### Removing confounds, cleaning data
+The question at hand is 'What happens to Honors students once they live off campus?', or 'Are students less likely to complete the Honors program once they move off campus?' The current dataset contains ```r nrow(wholeSet)``` records for students.
+
+As we are looking at completion, current students will confound the dataset. Therefore, they must be removed.
+
+```{r}
+wholeSet[wholeSet$Status2 != "Enrolled", ] -> NotCurrent
+```
+
+The resultant data set contains ```r nrow(NotCurrent)``` student records.
+
+Our primary interest in this study is if students stay in the program *voluntarily* while commuting.  While dismissal rates may be interesting in the future, students who were dismissed from the Honors Program do not have the opportunity to stay in the program *voluntarily.* Therefore, their records are confounds in this dataset, and must be removed.
+
+```{r}
+NotCurrent[NotCurrent$Status2 != "Dismissed", ] -> df
+```
+
+Finally, we will define successful retention for the purposes of this study as staying in the Honors Prorgam for at least 1-year after becoming a commuter, and not graduating during that time. To aid in the calculation of this value, we add a new variable toa ll student records named ```stayed```, which will hold either ```More than 2``` or ```Less than 2``` depending on whether or not the students continued in Honors more or less than 2 semesters after leaving the Honors halls.
+
+```{r}
+df$TotalSemestersNotInHonorsHall <- df$TotalSemestersAsHonors - df$TotalSemestersInHonorsHall
+df[!is.na(df$TotalSemestersNotInHonorsHall) & df$TotalSemestersNotInHonorsHall > 2, ] -> test1
+test1$stayed <- "More than 2"
+df[!is.na(df$TotalSemestersNotInHonorsHall) & df$TotalSemestersNotInHonorsHall <= 2, ] -> test2
+test2$stayed <- "Less than 2"
+rbind(test1, test2) -> df
+```
+
+We should also note here that 'commuter' is being defined as *not living in the honors halls*. As we are performing this study to gauge the potential effectiveness of an space dedicated to Honors students who are not living in the Honors halls, this is the correct variable to measure.  However, it might be argued that any effects we may find are not between Honors and Non-honors residencies, but between On-Campus and Off-Campus residencies.  We will create a similar variable ```stayedon``` for investigating those effects.
+
+```{r}
+df$TotalSemestersNotOnCampus <- df$TotalSemestersAtFerris - df$TotalSemestersOnCampus
+df[!is.na(df$TotalSemestersNotOnCampus) & df$TotalSemestersNotOnCampus > 2, ] -> test1
+test1$stayedon <- "More than 2"
+df[!is.na(df$TotalSemestersNotOnCampus) & df$TotalSemestersNotOnCampus <= 2, ] -> test2
+test2$stayedon <- "Less than 2"
+rbind(test1, test2) -> df
+```
+
+## Analysis
+
+### Retention to Honors
+Of the `r nrow(df)` student records contained in dataset, `r nrow(df[df$stayed == "Less than 2", ])` students left Honors within one year of leaving Honors housing. It is certainly true that some of them completed the program, and hence are not the group of interest in this study. Let us break the dataset down by Honors completion status:
+
+```{r}
+
+table(df$Status2, df$stayed) -> mytable
+mytable
+```
+
+We can further break the withdrawn down by whether the student withdrew from Ferris entirely, or just Honors.
+
+```{r}
+df[df$Status2 == "Withdrawn", ] -> wd
+table(wd$Status3, wd$stayed) -> wdtable
+wdtable
+```
+
+The vast majority (79%) of withdrawals in this dataset are voluntary withdrawals from Honors. While we cannot determine intent of students who withdrew from Ferris as well as Honors, it is plausible that a similar ratio were voluntary. We therefore have a large number of students (potentially `r wdtable[3,1]`) who choose to withdraw from Honors, but stay at Ferris, within one year of leaving the Honors residence halls.
+
+* Of those who left honors housing and did not complete in Honors, `r mytable[2,1]` of `r mytable[2,1]+mytable[2,2]` or `r round((mytable[2,1]/sum(mytable[2,1],mytable[2,2]))*100,1)`% withdrew from Honors **within one year** of leaving Honors housing. 
+
+* Of those who completed honors, `r mytable[1,1]` of `r mytable[1,1]+mytable[1,2]` or `r round((mytable[1,1]/sum(mytable[1,1],mytable[1,2]))*100,1)`% did so with one year.  
+
+In sum, only `r sum(mytable[1,1],mytable[2,2],mytable[1,2])` of `r nrow(df)` students or `r round((sum(mytable[1,1],mytable[2,2],mytable[1,2])/nrow(df))*100,1)`%  presisted^[retained or completed] for 1 year after leaving an Honors hall. 
+
+### Retention to Ferris
+
+Of the `r nrow(df)` students contained in dataset, `r nrow(df[df$stayedon == "Less than 2", ])` left the University  within one year of leaving on-campus housing. Once again, we can break that down by their Honors completion status:
+
+```{r}
+table(df$Status2, df$stayedon) -> stayedontable
+stayedontable
+```
+
+The number of students who withdrew from Honors but stayed on campus for more than one year is significantly higher ( `r stayedontable[2,2]`)  than the number who stayed in Honors for more than one year after leaving Honors housing (`r mytable[2,2]`).  This confirms our previous conclusion: a large chunk of Honors students (potentially `r stayedontable[2,2]-mytable[2,2]`) stay at Ferris after leaving campus housing, and voluntarily withdraw from Honors before completion. 
+
+These students we would like to retain.
+
+### Chart
+
+If we plot ```TotalSemestersAsHonors``` versus ```TotalSemestersNotInHonorsHalls```, we can start to see the pattern emerge.  The size and color of the points in the following chart correspond to the total number of students at that point. 
+
+```{r echo=FALSE}
+
+
+sumTable = ddply(df, .(TotalSemestersAsHonors, TotalSemestersNotInHonorsHall), summarize, count=length(TotalSemestersNotInHonorsHall))
+ggplot(sumTable, aes(x = TotalSemestersAsHonors, y = TotalSemestersNotInHonorsHall, size=count, color=count)) -> p
+p <- p + geom_point() + scale_size_continuous(range = c(1, 20)) 
+p <- p + geom_smooth(method = "lm") + scale_x_discrete()
+
+
+print(p)
+```
+
+The point at 4,8, which is the highest count charted, corresponds to those students who complete Honors in 4 years (8 semesters),  spending the first two in the Honors hall and the last two outside an honors hall.  
+
+The area of concern for this analysis are the large points at (0,1), (0,2) and (0,4). These are students who dropped Honors immediately after leaving the Honors hall.  `r sumTable[sumTable$TotalSemestersAsHonors == 1 & sumTable$TotalSemestersNotInHonorsHall == 0, ]$count` of them after 1 semeseter in Honors, `r sumTable[sumTable$TotalSemestersAsHonors == 2 & sumTable$TotalSemestersNotInHonorsHall == 0, ]$count` after 2 and `r sumTable[sumTable$TotalSemestersAsHonors == 4 & sumTable$TotalSemestersNotInHonorsHall == 0, ]$count` after 4. They are joined by `r sumTable[sumTable$TotalSemestersAsHonors == 2 & sumTable$TotalSemestersNotInHonorsHall == 1, ]$count` (2,1) and `r sumTable[sumTable$TotalSemestersAsHonors == 4 & sumTable$TotalSemestersNotInHonorsHall == 1, ]$count` (4,1) after one semester, and
+`r sumTable[sumTable$TotalSemestersAsHonors == 6 & sumTable$TotalSemestersNotInHonorsHall == 2, ]$count` after 1 year point (6,2).  
+```{r echo=FALSE}
+leaveHonors <- sum(sumTable[sumTable$TotalSemestersNotInHonorsHall <= 2 & sumTable$TotalSemestersAsHonors <= 6, ]$count)
+```
+
+This means that a grand total of `r round((leaveHonors/sum(sumTable$count)*100),1)` of Honors students exit Honors within 1 year of leaving on campus housing, confirming our analysis above.
+
+## Other possible confounds
+
+As nothing in higher education can be attributed to a single factor, it is likely that other factors along with the absence of a space for commuting students, play a role in causing students to withdraw from Honors at the same time they leave the Honors halls.  Two that spring to mind are:
+
+1. The curriculum that was in place for these students did not require Honors course work after the end of the second year.
+
+2. The residential life scholarship also ran out at the end of the second year. As a result, those who see Honors as a transaction with the University saw little personal benefits to remaining in Honors.
+
+We have worked hard over the past two years to address both of these factors. First, we are instituting a new curriculum that will provide honors experiences through all four years. And second, we have consistently shifted the rhetoric around honors, and hopefully understanding of Honors on campus, to better communicate a developmental, participatory structure, instead of a transactional one.
+
+The proposed lounge is not a isolated idea, but rather the last stage of a larger project to increase the retention to honors of students after they leave Honors housing by continuing to provide them with intellectual challenges, resources and support, as we are charged by our purpose statement.
